@@ -18,14 +18,24 @@ if (existsSync(envFile)) {
 const url = new URL(process.env.DATABASE_URL || "postgresql://localhost:5432/qa_career");
 const dbName = url.pathname.slice(1);
 
-const admin = new pg.Client({ connectionString: Object.assign(new URL(url), { pathname: "/postgres" }).toString() });
-await admin.connect();
-const { rowCount } = await admin.query("select 1 from pg_database where datname = $1", [dbName]);
-if (!rowCount) {
+// Hosted databases (e.g. Neon) already exist and may not expose a "postgres" database,
+// so only try to create the database when connecting to it fails with "does not exist".
+async function ensureDatabase() {
+  const probe = new pg.Client({ connectionString: url.toString() });
+  try {
+    await probe.connect();
+    await probe.end();
+    return;
+  } catch (err) {
+    if (err.code !== "3D000") throw err;
+  }
+  const admin = new pg.Client({ connectionString: Object.assign(new URL(url), { pathname: "/postgres" }).toString() });
+  await admin.connect();
   await admin.query(`create database "${dbName.replace(/"/g, "")}"`);
+  await admin.end();
   console.log(`Created database ${dbName}`);
 }
-await admin.end();
+await ensureDatabase();
 
 const db = new pg.Client({ connectionString: url.toString() });
 await db.connect();

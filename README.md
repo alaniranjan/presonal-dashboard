@@ -26,6 +26,19 @@ npm run dev                  # http://localhost:3000
 
 Then click **Create my plan** on the dashboard.
 
+## Deploy (Vercel + Neon, free tiers)
+
+1. **Database:** create a project at [neon.tech](https://neon.tech) and copy its connection string
+   (`postgresql://…neon.tech/neondb?sslmode=require`).
+2. **Create the tables there** from your Mac:
+   `DATABASE_URL="<neon connection string>" npm run db:setup`
+3. **App:** at [vercel.com](https://vercel.com), choose *Add New → Project*, import this GitHub repo, and add two environment variables:
+   - `DATABASE_URL`: the Neon connection string
+   - `APP_PASSWORD`: a password of your choice. **Required:** the app has no accounts, so without it anyone with the URL can see and edit your data.
+4. Deploy. Vercel gives you a `https://<name>.vercel.app` URL. The browser asks for the password once (any username).
+
+Every `git push` to `main` redeploys automatically. New `db/*.sql` migrations must be applied to Neon with step 2 again.
+
 ## Tests
 
 | Command | What it runs |
